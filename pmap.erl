@@ -40,8 +40,8 @@ pmap(Fun, List) when is_function(Fun), is_list(List) ->
 
 gather_tasks([Ref | Refs]) ->
     receive
-        {result, Ref, Ret} ->
-	    [Ret | gather_tasks(Refs)]
+        {result, Ref, Ret, Node} ->
+	    [{Node, Ret} | gather_tasks(Refs)]
     end;
 gather_tasks([]) ->
     [].
@@ -58,7 +58,7 @@ control(Master) ->
     receive
 	{do, Ref, Fun, Arg} ->
 	    Res = (catch Fun(Arg)),
-	    Master ! {result, Ref, Res},
+	    Master ! {result, Ref, Res, node()},
 	    control(Master);
 	stop ->
 	    Master ! {self(), done}
