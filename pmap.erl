@@ -19,22 +19,22 @@ pmap(Fun, List) when is_function(Fun), is_list(List) ->
 								  control(Master)
 							  end)
 			end, [node() | nodes()]),
-    {Refs, _} = lists:mapfoldl(fun (Item, [Worker | Rest]) ->
-				       Ref = make_ref(),
-				       Worker ! {do, Ref, Fun, Item},
-				       {Ref, Rest};
-				   (Item, []) ->
-				       [Worker | Rest] = Workers,
-				       Ref = make_ref(),
-				       Worker ! {do, Ref, Fun, Item},
-				       {Ref, Rest}
-			       end, Workers, List),
+    Refs = distribute_tasks(Fun, List, Workers, Workers),
     lists:foreach(fun (Worker) ->
 			  Worker ! stop
 		  end, Workers),
     Res = gather_tasks(Refs),
     gather_workers(Workers),
     Res.
+
+distribute_tasks(Fun, [Item | Items], [Worker | Workers], All) ->
+    Ref = erlang:make_ref(),
+    Worker ! {do, Ref, Fun, Item},
+    [Ref | distribute_tasks(Fun, Items, Workers, All)];
+distribute_tasks(Fun, Items, [], All) ->
+    distribute_tasks(Fun, Items, All, All);
+distribute_tasks(_, [], _, _) ->
+    [].
 
 %%% Implementation.
 
