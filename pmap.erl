@@ -66,3 +66,4 @@ flake(N) ->
 %%% Cement
 %%% Tomasova dalsi modifikace
 %%% volovina
+%%% banik
