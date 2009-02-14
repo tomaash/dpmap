@@ -9,7 +9,7 @@
 test(Count) ->
     %% {Usecs, Res} = timer:tc(?MODULE, pmap, [fun flake/1, lists:seq(1, Count)]),
     {Usecs, Res} = timer:tc(?MODULE, pmap, [fun fib/1, lists:seq(1, Count)]),
-    io:format("## Took ~w seconds. All: ~p~n", [Usecs / 1000000, Res]),
+    io:format("## Took ~f seconds. All: ~p~n", [Usecs / 1000000, Res]),
     ok.
 
 pmap(Fun, List) when is_function(Fun), is_list(List) ->
