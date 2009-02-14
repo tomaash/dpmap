@@ -14,32 +14,55 @@ test(Count) ->
 
 pmap(Fun, List) when is_function(Fun), is_list(List) ->
     Master = self(),
-    Nodes = [node() | nodes()],
-    {Pids, _} = lists:mapfoldl(fun (Item, [Node | Rest]) ->
-				       Pid = run(Node, Master, Fun, Item),
-				       {Pid, Rest};
+    Workers = lists:map(fun (Node) ->
+				proc_lib:spawn_link(Node, fun () ->
+								  control(Master)
+							  end)
+			end, [node() | nodes()]),
+    {Refs, _} = lists:mapfoldl(fun (Item, [Worker | Rest]) ->
+				       Ref = make_ref(),
+				       Worker ! {do, Ref, Fun, Item},
+				       {Ref, Rest};
 				   (Item, []) ->
-				       [Node | Rest] = Nodes,
-				       Pid = run(Node, Master, Fun, Item),
-				       {Pid, Rest}
-			       end, Nodes, List),
-    gather(Pids).
+				       [Worker | Rest] = Workers,
+				       Ref = make_ref(),
+				       Worker ! {do, Ref, Fun, Item},
+				       {Ref, Rest}
+			       end, Workers, List),
+    lists:foreach(fun (Worker) ->
+			  Worker ! stop
+		  end, Workers),
+    Res = gather_tasks(Refs),
+    gather_workers(Workers),
+    Res.
 
 %%% Implementation.
 
-gather([Pid | Pids]) ->
+gather_tasks([Ref | Refs]) ->
     receive
-        {Pid, Ret} ->
-	    [Ret | gather(Pids)]
+        {Ref, Ret} ->
+	    [Ret | gather_tasks(Refs)]
     end;
-gather([]) ->
+gather_tasks([]) ->
     [].
 
-run(Node, Master, Fun, Item) ->
-    spawn(Node, fun () ->
-			Result = (catch Fun(Item)),
-			Master ! {self(), Result}
-		end).
+gather_workers([Pid | Pids]) ->
+    receive
+	{Pid, done} ->
+	    gather_workers(Pids)
+    end;
+gather_workers([]) ->
+    ok.
+
+control(Master) ->
+    receive
+	{do, Ref, Fun, Arg} ->
+	    Res = (catch Fun(Arg)),
+	    Master ! {Ref, Res},
+	    control(Master);
+	stop ->
+	    Master ! {self(), done}
+    end.
 
 %%% Utilities.
 
@@ -62,8 +85,3 @@ fac(N) when is_integer(N), N > 1 ->
 flake(N) ->
     timer:sleep(N),
     ok.
-    
-%%% Cement
-%%% Tomasova dalsi modifikace
-%%% volovina
-%%% banik
