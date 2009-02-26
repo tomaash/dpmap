@@ -2,12 +2,24 @@ DPMAP
 Distributed PMAP algorithm written in Erlang.
 
 How to run it:
+# create erlang cookie
 echo "TWRKJYJEQZGEBRITIFLS" > ~/.erlang.cookie 
+
+# start three erlang nodes 
 erl -sname node1 
 erl -sname node2
 erl -sname node3 
+
+# ping the nodes
 (node1@localhost)> net_adm:ping(node2@localhost) 
 (node2@localhost)> net_adm:ping(node3@localhost)
+
+# list connected nodes - note the transitivity
 (node3@localhost)> nodes(). 
-(node3@localhost)>
+
+# compile dpmap
+(node3@localhost)> c(dpmap).
+
+# run
+(node3@localhost)> dpmap:test(10)
 
