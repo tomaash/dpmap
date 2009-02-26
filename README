@@ -1,1 +1,13 @@
-Distributed PMAP algorithm written in Erlang
+DPMAP
+Distributed PMAP algorithm written in Erlang.
+
+How to run it:
+echo "TWRKJYJEQZGEBRITIFLS" > ~/.erlang.cookie 
+erl -sname node1 
+erl -sname node2
+erl -sname node3 
+(node1@localhost)> net_adm:ping(node2@localhost) 
+(node2@localhost)> net_adm:ping(node3@localhost)
+(node3@localhost)> nodes(). 
+(node3@localhost)>
+
